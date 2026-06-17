@@ -19,7 +19,7 @@ data class ExpenseCategory(
 
 val categories = listOf(
     ExpenseCategory("Food", Icons.Default.Fastfood, Color(0xFFFDE8E8)),
-    ExpenseCategory("Travelll", Icons.Default.Flight, Color(0xFFE8F0FE)),
+    ExpenseCategory("Travel", Icons.Default.Flight, Color(0xFFE8F0FE)),
     ExpenseCategory("Shopping", Icons.Default.ShoppingCart, Color(0xFFFEF2E8)),
     ExpenseCategory("Bills", Icons.Default.Receipt, Color(0xFFFEF9E8)),
     ExpenseCategory("Entertainment", Icons.Default.Movie, Color(0xFFF3E8FE)),
