@@ -8,5 +8,9 @@ data class ExpenseEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val title: String,
     val amount: Double,
-    val category: String = "Others"
+    val category: String = "Others",
+    val isExpense: Boolean = true,
+    val contactName: String? = null,
+    val date: Long = System.currentTimeMillis(),
+    val imagePath: String? = null
 )

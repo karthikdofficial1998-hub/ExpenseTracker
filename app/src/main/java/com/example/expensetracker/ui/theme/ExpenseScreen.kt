@@ -1,5 +1,6 @@
 package com.example.expensetracker.ui.theme
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,27 +19,41 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.expensetracker.R
 import com.example.expensetracker.data.local.ExpenseEntity
 import com.example.expensetracker.viewmodel.ExpenseCategory
 import com.example.expensetracker.viewmodel.ExpenseUiState
 import com.example.expensetracker.viewmodel.ExpenseViewModel
 import com.example.expensetracker.viewmodel.categories
+import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
 import kotlinx.coroutines.launch
 
 @Composable
 fun ExpenseScreen(
     viewModel: ExpenseViewModel,
-    onAddExpenseClick: () -> Unit
+    onAddExpenseClick: () -> Unit,
+    onContactClick: () -> Unit,
+    onAnalyticsClick: () -> Unit,
+    onBudgetClick: () -> Unit,
+    onProfileClick: () -> Unit
 ) {
 
     val uiState by viewModel.uiState.collectAsState()
     ExpenseScreenContent(
         uiState = uiState,
         onAddExpenseClick = onAddExpenseClick,
+        onContactClick = onContactClick,
+        onAnalyticsClick = onAnalyticsClick,
+        onBudgetClick = onBudgetClick,
+        onProfileClick = onProfileClick,
         onDeleteExpense = { viewModel.deleteExpense(it) }
     )
 }
@@ -48,6 +63,10 @@ fun ExpenseScreen(
 fun ExpenseScreenContent(
     uiState: ExpenseUiState,
     onAddExpenseClick: () -> Unit = {},
+    onContactClick: () -> Unit = {},
+    onAnalyticsClick: () -> Unit = {},
+    onBudgetClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {},
     onDeleteExpense: (ExpenseEntity) -> Unit = {}
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -74,6 +93,10 @@ fun ExpenseScreenContent(
                                 colors = listOf(Color(0xFF5E49BF), Color(0xFF8066E0))
                             )
                         )
+                        .clickable {
+                            scope.launch { drawerState.close() }
+                            onProfileClick()
+                        }
                         .padding(20.dp),
                     contentAlignment = Alignment.BottomStart
                 ) {
@@ -81,25 +104,35 @@ fun ExpenseScreenContent(
                         Box(
                             modifier = Modifier
                                 .size(64.dp)
-                                .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                                .background(Color.White.copy(alpha = 0.2f), CircleShape)
+                                .clip(CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                Icons.Default.Person,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(32.dp)
-                            )
+                            if (uiState.userPhotoUri != null) {
+                                AsyncImage(
+                                    model = uiState.userPhotoUri,
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
                         }
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            "John Doe",
+                            uiState.userName,
                             color = Color.White,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            "john.doe@example.com",
+                            uiState.userMobile,
                             color = Color.White.copy(alpha = 0.8f),
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -131,6 +164,11 @@ fun ExpenseScreenContent(
                         onClick = {
                             selectedDrawerItem = label
                             scope.launch { drawerState.close() }
+                            when (label) {
+                                "Analytics" -> onAnalyticsClick()
+                                "Budget" -> onBudgetClick()
+                                "Dashboard" -> { /* Already here */ }
+                            }
                         },
                         icon = { Icon(icon, contentDescription = null) },
                         shape = RoundedCornerShape(12.dp),
@@ -183,19 +221,19 @@ fun ExpenseScreenContent(
                     )
                     NavigationBarItem(
                         selected = false,
-                        onClick = { },
+                        onClick = onAnalyticsClick,
                         icon = { Icon(Icons.Default.PieChart, contentDescription = null) },
                         label = { Text("Analytics") }
                     )
                     NavigationBarItem(
                         selected = false,
-                        onClick = { },
+                        onClick = onBudgetClick,
                         icon = { Icon(Icons.Default.Wallet, contentDescription = null) },
                         label = { Text("Budget") }
                     )
                     NavigationBarItem(
                         selected = false,
-                        onClick = { },
+                        onClick = onProfileClick,
                         icon = { Icon(Icons.Default.Person, contentDescription = null) },
                         label = { Text("Profile") }
                     )
@@ -254,19 +292,7 @@ fun ExpenseScreenContent(
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold
                                 )
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        "June 2025",
-                                        color = Color.White.copy(alpha = 0.8f),
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                    Icon(
-                                        Icons.Default.KeyboardArrowDown,
-                                        contentDescription = null,
-                                        tint = Color.White.copy(alpha = 0.8f),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
+                                
                             }
                             Row {
                                 IconButton(onClick = { }) {
@@ -312,7 +338,7 @@ fun ExpenseScreenContent(
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        "₹12,450",
+                                        "₹${(uiState.totalIncome - uiState.totalExpense).toInt()}",
                                         style = MaterialTheme.typography.headlineLarge,
                                         fontWeight = FontWeight.Bold,
                                         color = Color.Black
@@ -364,7 +390,7 @@ fun ExpenseScreenContent(
                                             color = Color.Gray
                                         )
                                         Text(
-                                            "₹15,000",
+                                            "₹${uiState.totalIncome.toInt()}",
                                             style = MaterialTheme.typography.titleMedium,
                                             color = Color(0xFF4CAF50),
                                             fontWeight = FontWeight.Bold
@@ -395,7 +421,7 @@ fun ExpenseScreenContent(
                                             color = Color.Gray
                                         )
                                         Text(
-                                            "₹2,550",
+                                            "₹${uiState.totalExpense.toInt()}",
                                             style = MaterialTheme.typography.titleMedium,
                                             color = Color(0xFFF44336),
                                             fontWeight = FontWeight.Bold
@@ -475,7 +501,12 @@ fun ExpenseScreenContent(
                                 CategoryChip(
                                     category = category,
                                     isSelected = selectedCategory == category,
-                                    onClick = { selectedCategory = category }
+                                    onClick = {
+                                        selectedCategory = category
+                                        if (category.name == "Contacts") {
+                                            onContactClick()
+                                        }
+                                    }
                                 )
                             }
                         }
@@ -513,6 +544,30 @@ fun ExpenseScreenContent(
                             .padding(horizontal = 20.dp, vertical = 8.dp)
                             .offset(y = (-20).dp)
                     )
+                }
+
+                if (uiState.isLoading) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = Color(0xFF5E49BF))
+                        }
+                    }
+                } else if (uiState.expenses.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 40.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("No transactions yet", color = Color.Gray)
+                        }
+                    }
                 }
 
                 item {
@@ -607,9 +662,10 @@ fun ExpenseItem(
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "₹${expense.amount.toInt()}",
+                    text = "${if (expense.isExpense) "-" else "+"} ₹${expense.amount.toInt()}",
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = if (expense.isExpense) Color(0xFFF44336) else Color(0xFF4CAF50)
                 )
                 Text(
                     text = expense.category,

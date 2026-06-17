@@ -5,10 +5,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.expensetracker.data.local.BudgetEntity
 import com.example.expensetracker.data.local.ExpenseEntity
 import com.example.expensetracker.data.repository.ExpenseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 
@@ -25,34 +27,57 @@ class ExpenseViewModel(
         _uiState.asStateFlow()
 
     init {
-        observeExpenses()
+        observeData()
     }
 
-    private fun observeExpenses() {
-
+    private fun observeData() {
         viewModelScope.launch {
+            combine(
+                repository.getExpenses(),
+                repository.getAllBudgets(),
+                repository.userName,
+                repository.userMobile,
+                repository.userPhotoUri
+            ) { expenses, budgets, name, mobile, photo ->
+                val totalExpense = expenses.filter { it.isExpense }.sumOf { it.amount }
+                val totalIncome = expenses.filter { !it.isExpense }.sumOf { it.amount }
 
-            repository
-                .getExpenses()
-                .collect { expenses ->
+                _uiState.value.copy(
+                    isLoading = false,
+                    expenses = expenses,
+                    budgets = budgets,
+                    totalExpense = totalExpense,
+                    totalIncome = totalIncome,
+                    userName = name,
+                    userMobile = mobile,
+                    userPhotoUri = photo
+                )
+            }.collect { newState ->
+                _uiState.value = newState
+            }
+        }
+    }
 
-                    _uiState.value =
-                        _uiState.value.copy(
-                            isLoading = false,
-                            expenses = expenses,
-                            totalExpense =
-                                expenses.sumOf {
-                                    it.amount
-                                }
-                        )
-                }
+    fun saveProfile(name: String, mobile: String, photoUri: String?) {
+        viewModelScope.launch {
+            repository.saveProfile(name, mobile, photoUri)
+        }
+    }
+
+    fun setBudget(category: String, limit: Double) {
+        viewModelScope.launch {
+            repository.insertBudget(BudgetEntity(category, limit))
         }
     }
 
     fun addExpense(
         title: String,
         amount: Double,
-        category: String
+        category: String,
+        isExpense: Boolean,
+        contactName: String? = null,
+        date: Long = System.currentTimeMillis(),
+        imagePath: String? = null
     ) {
 
         viewModelScope.launch {
@@ -61,7 +86,11 @@ class ExpenseViewModel(
                 ExpenseEntity(
                     title = title,
                     amount = amount,
-                    category = category
+                    category = category,
+                    isExpense = isExpense,
+                    contactName = contactName,
+                    date = date,
+                    imagePath = imagePath
                 )
             )
         }

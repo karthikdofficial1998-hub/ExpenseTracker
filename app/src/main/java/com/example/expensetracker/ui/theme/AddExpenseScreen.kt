@@ -28,7 +28,7 @@ import com.example.expensetracker.viewmodel.categories
 @Composable
 fun AddExpenseScreen(
     onBackClick: () -> Unit,
-    onSaveClick: (String, Double, String) -> Unit
+    onSaveClick: (String, Double, String, Boolean) -> Unit
 ) {
     var amount by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf(categories.first()) }
@@ -71,7 +71,7 @@ fun AddExpenseScreen(
                     }
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
-                        "Add Expense",
+                        if (isExpense) "Add Expense" else "Add Income",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
@@ -178,7 +178,7 @@ fun AddExpenseScreen(
                 onClick = {
                     val amtValue = amount.toDoubleOrNull() ?: 0.0
                     if (amtValue > 0) {
-                        onSaveClick(selectedCategory.name, amtValue, selectedCategory.name)
+                        onSaveClick(selectedCategory.name, amtValue, selectedCategory.name, isExpense)
                     }
                 },
                 modifier = Modifier
@@ -187,7 +187,11 @@ fun AddExpenseScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B66FF)),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Add Expense", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    if (isExpense) "Add Expense" else "Add Income",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -295,7 +299,7 @@ fun AddExpenseScreenPreview() {
     ExpenseTrackerTheme {
         AddExpenseScreen(
             onBackClick = {},
-            onSaveClick = { _, _, _ -> }
+            onSaveClick = { _, _, _, _ -> }
         )
     }
 }
