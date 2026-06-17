@@ -123,7 +123,7 @@ class MainActivity : ComponentActivity() {
                         "add_expense" -> {
                             AddExpenseScreen(
                                 onBackClick = { currentScreen = "list" },
-                                onSaveClick = { title, amount, category, isExpense ->
+                                onSaveClick = {  title, amount, category, isExpense ->
                                     vm.addExpense(title, amount, category, isExpense)
                                     currentScreen = "list"
                                 }
